@@ -5,6 +5,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.lcn.coolweather.gson.Forecast;
 import com.lcn.coolweather.gson.Weather;
+import com.lcn.coolweather.service.AutoUpdateService;
 import com.lcn.coolweather.util.HttpUtil;
 import com.lcn.coolweather.util.Utility;
 
@@ -174,6 +176,7 @@ public class WeatherActivity extends AppCompatActivity implements SwipeRefreshLa
                        editor.apply();
                        showWeatherInfo(weather);
                        swipeRefresh.setRefreshing(false);
+                       //从这里获取
                    } else {
                        Toast.makeText(WeatherActivity.this, "获取天气信息失败.",
                                Toast.LENGTH_SHORT).show();
@@ -221,6 +224,9 @@ public class WeatherActivity extends AppCompatActivity implements SwipeRefreshLa
         carWashText.setText(carWash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
+        //在这里开启后台服务,去定时更新天气信息.
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 
     /**
