@@ -108,11 +108,19 @@ public class ChooseAreaFragment extends Fragment {
                 queryCounty();
             } else if (mCurrentLevel == LEVEL_COUNTY) {
                 String weatherId = mCountyList.get(position).getWeatherId();
-                Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                intent.putExtra("weather_id", weatherId);
-                startActivity(intent);
-                //添加这一句是为了什么?为了不显示城镇列表直接退出应用?想不明白.
-                getActivity().finish();
+                //该fragment被填充到了MainActivity和WeatherActivity里面处理不同的逻辑,需要不同对待.
+                if (getActivity() instanceof MainActivity) {
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
+                    //添加这一句是为了什么?为了不显示城镇列表直接退出应用?想不明白.
+                    getActivity().finish();
+                } else if (getActivity() instanceof WeatherActivity) {
+                    WeatherActivity weatherActivity = (WeatherActivity) getActivity();
+                    weatherActivity.drawerLayout.closeDrawers();
+                    weatherActivity.swipeRefresh.setRefreshing(true);
+                    weatherActivity.requestWeather(weatherId);
+                }
             }
         });
         mBackButton.setOnClickListener(v -> {

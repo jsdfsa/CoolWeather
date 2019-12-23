@@ -1,7 +1,9 @@
 package com.lcn.coolweather;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -31,7 +33,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class WeatherActivity extends AppCompatActivity {
+public class WeatherActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener, View.OnClickListener {
 
     private ScrollView weatherLayout;
 
@@ -57,6 +59,10 @@ public class WeatherActivity extends AppCompatActivity {
 
     private TextView sportText;
     private ImageView bingPicImg;
+    public SwipeRefreshLayout swipeRefresh;
+
+    private String weatherId;
+    public DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +76,14 @@ public class WeatherActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_weather);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
+        //初始化DrawerLayout的相关功能.
+        navButton = findViewById(R.id.nav_button);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navButton.setOnClickListener(this);
+        //初始化下拉刷新
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefresh.setOnRefreshListener(this);
         // 初始化各控件
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
@@ -97,10 +110,11 @@ public class WeatherActivity extends AppCompatActivity {
         if (weatherString != null) {
             //数据已经存储,直接解析已经存储的数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
             //数据未存储,到服务器拉取数据
-            String weatherId = getIntent().getStringExtra("weather_id");
+            weatherId = getIntent().getStringExtra("weather_id");
             //没有数据,先隐藏掉显示天气的主体界面
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
@@ -135,14 +149,16 @@ public class WeatherActivity extends AppCompatActivity {
      * 到服务器上去拉取天气信息.
      * @param weatherId
      */
-    private void requestWeather(String weatherId) {
+    protected void requestWeather(String weatherId) {
         String weatherUrl = "http://guolin.tech/api/weather?cityid="
                 + weatherId + "&key=d0f66ec04c5743a09a61554543a9c805";
         HttpUtil.sendHttpRequest(weatherUrl, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 runOnUiThread(() -> {
-                    Toast.makeText(WeatherActivity.this, "更新天气信息失败.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(WeatherActivity.this, "更新天气信息失败.",
+                            Toast.LENGTH_SHORT).show();
+                    swipeRefresh.setRefreshing(false);
                 });
             }
 
@@ -157,6 +173,10 @@ public class WeatherActivity extends AppCompatActivity {
                        editor.putString(Constants.WEATHER_KEY, weatherResponse);
                        editor.apply();
                        showWeatherInfo(weather);
+                       swipeRefresh.setRefreshing(false);
+                   } else {
+                       Toast.makeText(WeatherActivity.this, "获取天气信息失败.",
+                               Toast.LENGTH_SHORT).show();
                    }
                });
             }
@@ -203,23 +223,20 @@ public class WeatherActivity extends AppCompatActivity {
         weatherLayout.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * 下拉刷新监听回调
+     */
+    @Override
+    public void onRefresh() {
+        requestWeather(weatherId);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * 处理navButton的点击事件,处理DrawerLayout事务
+     * @param v
+     */
+    @Override
+    public void onClick(View v) {
+        drawerLayout.openDrawer(GravityCompat.START);
+    }
 }
